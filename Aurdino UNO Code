@@ -1,0 +1,82 @@
+#define BLYNK_PRINT Serial
+#include <ESP8266WiFi.h>
+#include <BlynkSimpleEsp8266.h>
+#include<Servo.h>
+Servo servo;
+
+#define  trig  D0
+#define  echo  D2
+#define  led   D1
+long duration;
+int distance;
+
+
+// You should get Auth Token in the Blynk App.
+
+char auth[] = "Qc91vfcyldtaGcAokrj208GLTytAh4FK";
+
+// Your WiFi credentials.
+// Set password to "" for open networks.
+char ssid[] = "<WI-Fi name>";
+char pass[] = "<Wi-Fi password>";
+
+BlynkTimer timer;
+WidgetLCD lcd(V1);
+void setup()
+{
+  // Debug console
+  pinMode(trig, OUTPUT);  // Sets the trigPin as an Output
+  pinMode(echo, INPUT);// Sets the echoPin as an Input
+  pinMode(led,OUTPUT);
+  Serial.begin(9600);
+  servo.attach(2);
+  servo.write(0);
+  Blynk.begin(auth, ssid, pass);
+
+  // Setup a function to be called every second
+  timer.setInterval(1000L, sendSensor);
+}
+
+void loop()
+{
+  Blynk.run();
+  timer.run();
+}
+void sendSensor()
+{
+  digitalWrite(trig, LOW);   // Makes trigPin low
+  delayMicroseconds(2);       // 2 micro second delay
+
+  digitalWrite(trig, HIGH);  // tigPin high
+  delayMicroseconds(10);      // trigPin high for 10 micro seconds
+  digitalWrite(trig, LOW);   // trigPin low
+
+  duration = pulseIn(echo, HIGH);   //Read echo pin, time in microseconds
+  distance = duration * 0.034 / 2;   //Calculating actual/real distance
+
+   if(distance<10)
+  {
+    
+    servo.write(180);
+    digitalWrite(led,HIGH);
+    
+    delay(1000);
+
+  }
+  else{
+    servo.write(0);
+    digitalWrite(led,LOW);
+    delay(50);
+  }
+
+  Serial.print("Distance = ");        //Output distance on arduino serial monitor
+  Serial.println(distance);
+
+
+  Blynk.virtualWrite(V0, distance);
+  
+  lcd.print(0, 0, "Smart Door Lock"); // use: (position X: 0-15, position Y: 0-1, "Message you want to print")
+  lcd.print(0, 1, "Distance: " + String(distance) + "cm  ");
+  delay(1000); 
+
+}
